@@ -21,36 +21,32 @@ class Dog
   
   
   def self.drop_table
-    sql = <<-SQL
-      DROP TABLE IF EXISTS dogs
-    SQL
+    sql = "DROP TABLE IF EXISTS dogs"
     DB[:conn].execute(sql)
   end
   
   
   def save
-    if self.id
-      self.update
-    else
-      sql = <<-SQL
-        INSERT INTO dogs (name, breed)
-        VALUES (?, ?)
-      SQL
-      DB[:conn].execute(sql, self.name, self.breed)
-      @id = DB[:conn].execute("SELECT last_insert_rowid() FROM dogs")[0][0]
-    end
+    sql = <<-SQL
+    INSERT INTO dogs(name, breed) 
+    VALUES (?, ?);
+    SQL
+    
+    DB[:conn].execute(sql, self.name, self.breed)
+    @id = DB[:conn].execute("SELECT last_insert_rowid() FROM dogs")[0][0]
+    self
   end
   
   
   def self.create(name:, breed:)
-    dog = self.new(name, breed)
+    dog = self.new(breed: breed, name: name)
     dog.save
     dog
   end
   
   
   def self.new_from_db(row)
-    dog = self.new(id: [0], name: [1], breed: [2])
+    dog = self.new(id: row[0], name: row[1], breed: row[2])
     dog
   end
   
@@ -61,16 +57,16 @@ class Dog
       FROM dogs
       WHERE dogs.id = ?
     SQL
-    returns = DB[:conn].execute(sql, id)[0]
-    self.new_from_db(returns[0], returns[1], returns[2])
+    result = DB[:conn].execute(sql, id)[0]
+    Dog.new_from_db(result)
   end
   
   
   def self.find_or_create_by(name:, breed:)
     dog = DB[:conn].execute("SELECT * FROM dogs WHERE name = ? AND breed = ?", name, breed)
     if !dog.empty?
-      dog = dog[0]
-      dog = self.new(dog[0], dog[1], dog[2])
+      dog_info = dog[0]
+      dog = self.new(id: dog_info[0], name: dog_info[1], breed: dog_info[2])
     else
       dog = self.create(name: name, breed: breed)
     end

@@ -57,8 +57,8 @@ class Dog
       FROM dogs
       WHERE dogs.id = ?
     SQL
-    returns = DB[:conn].execute(sql, id)[0]
-    self.new_from_db(returns[0], returns[1], returns[2])
+    result = DB[:conn].execute(sql, id)[0]
+    self.new_from_db(result[0], result[1], result[2])
   end
   
   
